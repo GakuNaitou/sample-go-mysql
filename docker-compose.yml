@@ -1,6 +1,13 @@
 version: "3"
 
 services:
+  mysql:
+    image: mysql:5.7
+    volumes:
+      - sample-go-mysql-data:/var/lib/mysql
+    environment: 
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: sample_go_mysql_development
   go-app:
     image: golang:1.14
     command: sh -c "go build && go run main.go"
@@ -9,3 +16,11 @@ services:
     working_dir: /go-app
     volumes:
       - ./go-app/:/go-app
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_DB: sample_go_mysql_development
+
+volumes:
+  sample-go-mysql-data:
