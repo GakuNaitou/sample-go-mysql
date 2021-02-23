@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
+	"io"
 	"net/http"
 	"os"
 
@@ -16,20 +18,31 @@ type SampleUser struct {
 	Name string
 }
 
+type Template struct {
+	templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
 func main() {
+	t := &Template{
+		templates: template.Must(template.ParseGlob("views/*.html")),
+	}
 	e := echo.New()
+	e.Renderer = t
+
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(mysql:3306)/%s?charset=utf8&parseTime=True&loc=Local",
 		os.Getenv("MYSQL_USER"),
 		os.Getenv("MYSQL_PASSWORD"),
 		os.Getenv("MYSQL_DB"),
 	)
-
 	sqlDB, err := sql.Open(os.Getenv("MYSQL_HOST"), dsn)
 	if err != nil {
 		panic(err)
 	}
-
 	gormDB, err := gorm.Open(mysql.New(mysql.Config{
 		Conn: sqlDB,
 	}), &gorm.Config{})
@@ -38,15 +51,25 @@ func main() {
 	}
 
 	gormDB.AutoMigrate(&SampleUser{})
-	gormDB.Create(&SampleUser{Name: "sample name"})
 
 	e.GET("/", func(c echo.Context) error {
-		var sampleUser SampleUser
-		gormDB.First(&sampleUser)
+		var sampleUsers []SampleUser
+		gormDB.Find(&sampleUsers)
 
-		return c.String(http.StatusOK,
-			fmt.Sprintf("%s", sampleUser.Name),
-		)
+		ViewData := struct {
+			SampleUsers []SampleUser
+		}{
+			SampleUsers: sampleUsers,
+		}
+
+		return c.Render(http.StatusOK, "main.html", ViewData)
+	})
+
+	e.POST("/", func(c echo.Context) error {
+		sampleUserName := c.FormValue("name")
+		gormDB.Create(&SampleUser{Name: sampleUserName})
+
+		return c.Redirect(http.StatusFound, "/")
 	})
 
 	e.Logger.Fatal(e.Start(":9000"))

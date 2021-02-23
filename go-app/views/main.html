@@ -1,0 +1,12 @@
+{{define "main.html"}}
+<h2>サンプルユーザー作成</h2>
+<form method="POST" action="/">
+    <input name="name" type="text">
+    <input type="submit" value="作成する">
+</form>
+<h2>サンプルユーザー一覧</h2>
+{{range $sampleUser := .SampleUsers}}
+    <p>{{$sampleUser.Name}}</p>
+    <hr>
+{{end}}
+{{end}}
