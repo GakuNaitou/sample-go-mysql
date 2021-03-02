@@ -72,11 +72,11 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 // }
 
 func main() {
-	// t := &Template{
-	// 	templates: template.Must(template.ParseGlob("views/*.html")),
-	// }
+	t := &Template{
+		templates: template.Must(template.ParseGlob("views/*.html")),
+	}
 	e := echo.New()
-	// e.Renderer = t
+	e.Renderer = t
 
 	// dsn := fmt.Sprintf(
 	// 	"%s:%s@tcp(mysql:3306)/%s?charset=utf8&parseTime=True&loc=Local",
@@ -107,8 +107,8 @@ func main() {
 		// 	SampleUsers: sampleUsers,
 		// }
 
-		// return c.Render(http.StatusOK, "main.html", "hoge")
-		return c.String(http.StatusOK, "Hello, World!")
+		return c.Render(http.StatusOK, "main.html", "hoge")
+		// return c.String(http.StatusOK, "Hello, World!")
 	})
 
 	// e.POST("/", func(c echo.Context) error {
