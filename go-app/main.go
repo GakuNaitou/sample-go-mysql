@@ -68,5 +68,5 @@ func main() {
 		return c.Redirect(http.StatusFound, "/")
 	})
 
-	e.Logger.Fatal(e.Start(":9000"))
+	// e.Logger.Fatal(e.Start(":9000"))
 }
