@@ -1,9 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/labstack/echo"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -72,28 +76,53 @@ type SampleUser struct {
 func main() {
 	e := echo.New()
 
-	// dsn := fmt.Sprintf(
-	// 	"%s:%s@tcp(mysql:3306)/%s?charset=utf8&parseTime=True&loc=Local",
-	// 	os.Getenv("MYSQL_USER"),
-	// 	os.Getenv("MYSQL_PASSWORD"),
-	// 	os.Getenv("MYSQL_DB"),
-	// )
-	// sqlDB, err := sql.Open(os.Getenv("MYSQL_HOST"), dsn)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// gormDB, err := gorm.Open(mysql.New(mysql.Config{
-	// 	Conn: sqlDB,
-	// }), &gorm.Config{})
-	// if err != nil {
-	// 	panic(err)
-	// }
+	var sqlDB gorm.ConnPool
+	var err error
+	if os.Getenv("ENV") == "development" {
+		dsn := fmt.Sprintf(
+			"%s:%s@tcp(mysql:3306)/%s?charset=utf8&parseTime=True&loc=Local",
+			os.Getenv("MYSQL_USER"),
+			os.Getenv("MYSQL_PASSWORD"),
+			os.Getenv("MYSQL_DB"),
+		)
+		sqlDB, err = sql.Open(os.Getenv("MYSQL_HOST"), dsn)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		var (
+			dbUser                 = os.Getenv("DB_USER")                  // e.g. 'my-db-user'
+			dbPwd                  = os.Getenv("DB_PASS")                  // e.g. 'my-db-password'
+			instanceConnectionName = os.Getenv("INSTANCE_CONNECTION_NAME") // e.g. 'project:region:instance'
+			dbName                 = os.Getenv("DB_NAME")                  // e.g. 'my-database'
+		)
 
-	// gormDB.AutoMigrate(&SampleUser{})
+		socketDir, isSet := os.LookupEnv("DB_SOCKET_DIR")
+		if !isSet {
+			socketDir = "/cloudsql"
+		}
+
+		var dbURI string
+		dbURI = fmt.Sprintf("%s:%s@unix(/%s/%s)/%s?parseTime=true", dbUser, dbPwd, socketDir, instanceConnectionName, dbName)
+
+		sqlDB, err = sql.Open("mysql", dbURI)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{
+		Conn: sqlDB,
+	}), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+
+	gormDB.AutoMigrate(&SampleUser{})
 
 	e.GET("/", func(c echo.Context) error {
-		// var sampleUsers []SampleUser
-		// gormDB.Find(&sampleUsers)
+		var sampleUsers []SampleUser
+		gormDB.Find(&sampleUsers)
 
 		// ViewData := struct {
 		// 	SampleUsers []SampleUser
@@ -102,15 +131,15 @@ func main() {
 		// }
 
 		// return c.Render(http.StatusOK, "main.html", "hoge")
-		return c.String(http.StatusOK, "Hello, World!")
+		return c.String(http.StatusOK, fmt.Sprintf("Hello, %s", sampleUsers[0].Name))
 	})
 
-	// e.POST("/", func(c echo.Context) error {
-	// 	sampleUserName := c.FormValue("name")
-	// 	gormDB.Create(&SampleUser{Name: sampleUserName})
+	e.POST("/", func(c echo.Context) error {
+		sampleUserName := c.FormValue("name")
+		gormDB.Create(&SampleUser{Name: sampleUserName})
 
-	// 	return c.Redirect(http.StatusFound, "/")
-	// })
+		return c.Redirect(http.StatusFound, "/")
+	})
 
 	e.Logger.Fatal(e.Start(":9000"))
 }
