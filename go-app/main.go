@@ -2,7 +2,11 @@ package main
 
 import (
 	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/labstack/echo"
@@ -71,9 +75,42 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 // 	e.Logger.Fatal(e.Start(":9000"))
 // }
 
+// ParseTemplates テンプレートを再起読み込みする関数
+func ParseTemplates() *template.Template {
+	funcMap := template.FuncMap{
+		"markdown": func(s string) string {
+			return s
+		},
+	}
+	tpl := template.New("")
+	err := filepath.Walk("views", func(path string, info os.FileInfo, e1 error) error {
+		if !info.IsDir() && strings.HasSuffix(path, ".html") {
+			if e1 != nil {
+				return e1
+			}
+			b, e2 := ioutil.ReadFile(path)
+			if e2 != nil {
+				return e2
+			}
+			filename := strings.Replace(path, "views/", "", -1)
+			t := tpl.New(filename).Funcs(funcMap)
+			t, e2 = t.Parse(string(b))
+			if e2 != nil {
+				return e2
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	return tpl
+}
+
 func main() {
 	t := &Template{
-		templates: template.Must(template.ParseGlob("views/*.html")),
+		// templates: template.Must(template.ParseGlob("views/*.html")),
+		templates: ParseTemplates(),
 	}
 	e := echo.New()
 	e.Renderer = t
