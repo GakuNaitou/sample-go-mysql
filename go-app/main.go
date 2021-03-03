@@ -1,13 +1,7 @@
 package main
 
 import (
-	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"text/template"
 
 	"github.com/labstack/echo"
 	"gorm.io/gorm"
@@ -18,13 +12,13 @@ type SampleUser struct {
 	Name string
 }
 
-type Template struct {
-	templates *template.Template
-}
+// type Template struct {
+// 	templates *template.Template
+// }
 
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
+// func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+// 	return t.templates.ExecuteTemplate(w, name, data)
+// }
 
 // func main() {
 // 	t := &Template{
@@ -75,45 +69,8 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 // 	e.Logger.Fatal(e.Start(":9000"))
 // }
 
-// ParseTemplates テンプレートを再起読み込みする関数
-func ParseTemplates() *template.Template {
-	funcMap := template.FuncMap{
-		"markdown": func(s string) string {
-			return s
-		},
-	}
-	tpl := template.New("")
-	err := filepath.Walk("views", func(path string, info os.FileInfo, e1 error) error {
-		if !info.IsDir() && strings.HasSuffix(path, ".html") {
-			if e1 != nil {
-				return e1
-			}
-			b, e2 := ioutil.ReadFile(path)
-			if e2 != nil {
-				return e2
-			}
-			filename := strings.Replace(path, "views/", "", -1)
-			t := tpl.New(filename).Funcs(funcMap)
-			t, e2 = t.Parse(string(b))
-			if e2 != nil {
-				return e2
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-	return tpl
-}
-
 func main() {
-	t := &Template{
-		// templates: template.Must(template.ParseGlob("views/*.html")),
-		templates: ParseTemplates(),
-	}
 	e := echo.New()
-	e.Renderer = t
 
 	// dsn := fmt.Sprintf(
 	// 	"%s:%s@tcp(mysql:3306)/%s?charset=utf8&parseTime=True&loc=Local",
@@ -144,8 +101,8 @@ func main() {
 		// 	SampleUsers: sampleUsers,
 		// }
 
-		return c.Render(http.StatusOK, "main.html", "hoge")
-		// return c.String(http.StatusOK, "Hello, World!")
+		// return c.Render(http.StatusOK, "main.html", "hoge")
+		return c.String(http.StatusOK, "Hello, World!")
 	})
 
 	// e.POST("/", func(c echo.Context) error {
