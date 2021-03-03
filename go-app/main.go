@@ -91,10 +91,10 @@ func main() {
 		}
 	} else {
 		var (
-			dbUser                 = os.Getenv("DB_USER")                  // e.g. 'my-db-user'
-			dbPwd                  = os.Getenv("DB_PASS")                  // e.g. 'my-db-password'
+			dbUser                 = os.Getenv("MYSQL_USER")               // e.g. 'my-db-user'
+			dbPwd                  = os.Getenv("MYSQL_PASS")               // e.g. 'my-db-password'
 			instanceConnectionName = os.Getenv("INSTANCE_CONNECTION_NAME") // e.g. 'project:region:instance'
-			dbName                 = os.Getenv("DB_NAME")                  // e.g. 'my-database'
+			dbName                 = os.Getenv("MYSQL_DB")                 // e.g. 'my-database'
 		)
 
 		socketDir, isSet := os.LookupEnv("DB_SOCKET_DIR")
