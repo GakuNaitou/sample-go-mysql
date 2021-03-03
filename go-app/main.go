@@ -105,6 +105,8 @@ func main() {
 		var dbURI string
 		dbURI = fmt.Sprintf("%s:%s@unix(/%s/%s)/%s?parseTime=true", dbUser, dbPwd, socketDir, instanceConnectionName, dbName)
 
+		fmt.Println(dbURI)
+
 		sqlDB, err = sql.Open("mysql", dbURI)
 		if err != nil {
 			panic(err)
